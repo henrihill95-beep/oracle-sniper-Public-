@@ -770,37 +770,32 @@ function saveAndFetch() {
   localStorage.setItem('oracle_goldapi_key', key);
   startLiveFeed();
 }
-
 async function fetchGoldPrice() {
   if (!apiKey) return;
-
-  // Try multiple CORS proxies in order
-  const endpoints = [
-    // Direct (works on desktop/some mobile)
-    { url: 'https://www.goldapi.io/api/XAU/USD', headers: { 'x-access-token': apiKey } },
-    // CORS proxy 1
-    { url: `https://corsproxy.io/?url=${encodeURIComponent('https://www.goldapi.io/api/XAU/USD')}`, headers: { 'x-access-token': apiKey } },
-    // CORS proxy 2
-    { url: `https://api.allorigins.win/get?url=${encodeURIComponent('https://www.goldapi.io/api/XAU/USD&headers=' + JSON.stringify({'x-access-token': apiKey}))}`, headers: {} },
-  ];
+  let d = null;
 
   try {
-    let d = null;
+    const res = await fetch("https://oracle-sniper-proxy.henri.workers.dev");
 
-    for (const ep of endpoints) {
-      try {
-        const res = await fetch(ep.url, { headers: ep.headers });
-        if (!res.ok) continue;
-        const raw = await res.json();
-        // allorigins wraps in { contents: "..." }
-        d = raw.contents ? JSON.parse(raw.contents) : raw;
-        if (d && d.price) break;
-      } catch { continue; }
-    }
+    if (!res.ok) throw new Error("Erreur API");
 
-    if (!d || !d.price) throw new Error('Tous les endpoints ont échoué');
-    livePrice = d.price;
-    liveData  = d;
+    d = await res.json();
+
+    if (!d || !d.price) throw new Error("Prix introuvable");
+
+  } catch (e) {
+    console.error(e);
+    return;
+  }
+}
+
+  // Try multiple CORS proxies in order
+  
+
+  
+    
+
+
 
     const ch  = d.ch   ?? 0;
     const chp = d.chp  ?? 0;
